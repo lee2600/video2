@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Star, Calendar, Plus, Check } from 'lucide-react';
 import { IMAGE_BASE_URL, POSTER_SIZE } from '../config/api';
 import { useCart } from '../context/CartContext';
+import { CartAnimation } from './CartAnimation';
 import type { Movie, TVShow, CartItem } from '../types/movie';
 
 interface MovieCardProps {
@@ -12,6 +13,7 @@ interface MovieCardProps {
 
 export function MovieCard({ item, type }: MovieCardProps) {
   const { addItem, removeItem, isInCart } = useCart();
+  const [showAnimation, setShowAnimation] = React.useState(false);
   
   const title = 'title' in item ? item.title : item.name;
   const releaseDate = 'release_date' in item ? item.release_date : item.first_air_date;
@@ -40,10 +42,12 @@ export function MovieCard({ item, type }: MovieCardProps) {
       removeItem(item.id);
     } else {
       addItem(cartItem);
+      setShowAnimation(true);
     }
   };
 
   return (
+    <>
     <div className="group relative bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:scale-105">
       <Link to={`/${type}/${item.id}`}>
         <div className="relative overflow-hidden">
@@ -76,7 +80,7 @@ export function MovieCard({ item, type }: MovieCardProps) {
       
       <div className="absolute bottom-4 right-4">
         <button
-          onClick={handleCartAction}
+            className={`p-2 rounded-full shadow-lg transition-all duration-300 hover:scale-110 ${
           className={`p-2 rounded-full shadow-lg transition-all duration-200 ${
             inCart
               ? 'bg-green-500 hover:bg-green-600 text-white'
@@ -86,6 +90,12 @@ export function MovieCard({ item, type }: MovieCardProps) {
           {inCart ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
         </button>
       </div>
+      
+      <CartAnimation 
+        show={showAnimation} 
+        onComplete={() => setShowAnimation(false)} 
+      />
+    </>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ChevronRight, TrendingUp, Star, Tv } from 'lucide-react';
 import { tmdbService } from '../services/tmdb';
 import { MovieCard } from '../components/MovieCard';
+import { HeroCarousel } from '../components/HeroCarousel';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorMessage } from '../components/ErrorMessage';
 import type { Movie, TVShow } from '../types/movie';
@@ -11,6 +12,7 @@ export function Home() {
   const [popularMovies, setPopularMovies] = useState<Movie[]>([]);
   const [popularTVShows, setPopularTVShows] = useState<TVShow[]>([]);
   const [popularAnime, setPopularAnime] = useState<TVShow[]>([]);
+  const [heroItems, setHeroItems] = useState<(Movie | TVShow)[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,6 +29,12 @@ export function Home() {
         setPopularMovies(moviesRes.results.slice(0, 8));
         setPopularTVShows(tvRes.results.slice(0, 8));
         setPopularAnime(animeRes.results.slice(0, 8));
+        
+        // Combinar los mejores elementos para el carrusel
+        const topMovies = moviesRes.results.slice(0, 3);
+        const topTVShows = tvRes.results.slice(0, 3);
+        const topAnime = animeRes.results.slice(0, 2);
+        setHeroItems([...topMovies, ...topTVShows, ...topAnime]);
       } catch (err) {
         setError('Error al cargar el contenido. Por favor, intenta de nuevo.');
         console.error('Error fetching home data:', err);
@@ -56,30 +64,32 @@ export function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-blue-900 via-purple-900 to-pink-800 text-white py-20">
-        <div className="absolute inset-0 bg-black/30"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
+      {/* Hero Carousel */}
+      <HeroCarousel items={heroItems} />
+      
+      {/* Call to Action Section */}
+      <section className="bg-gradient-to-r from-blue-900 via-purple-900 to-pink-800 text-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h1 className="text-3xl md:text-5xl font-bold mb-6">
             Descubre el Mundo del
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-pink-400">
               {' '}Entretenimiento
             </span>
           </h1>
-          <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
+          <p className="text-lg md:text-xl mb-8 max-w-3xl mx-auto opacity-90">
             Explora miles de películas, series y anime. Encuentra tus favoritos y agrégalos a tu carrito.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/movies"
-              className="bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-full font-semibold transition-colors flex items-center justify-center"
+              className="bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-full font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center"
             >
               <TrendingUp className="mr-2 h-5 w-5" />
               Explorar Películas
             </Link>
             <Link
               to="/tv"
-              className="bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-full font-semibold transition-colors flex items-center justify-center"
+              className="bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-full font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center"
             >
               <Tv className="mr-2 h-5 w-5" />
               Ver Series
