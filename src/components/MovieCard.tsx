@@ -56,7 +56,7 @@ export function MovieCard({ item, type }: MovieCardProps) {
           
           <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded-full text-sm flex items-center space-x-1">
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-            <span>{item.vote_average.toFixed(1)}</span>
+            <span>{item.vote_average ? item.vote_average.toFixed(1) : 'N/A'}</span>
           </div>
         </div>
         
