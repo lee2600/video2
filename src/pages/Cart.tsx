@@ -460,7 +460,7 @@ export function Cart() {
               className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-6 py-4 rounded-xl transition-all duration-300 flex items-center justify-center transform hover:scale-105 hover:shadow-lg touch-manipulation"
             >
               <MessageCircle className="mr-3 h-6 w-6" />
-              <span className="animated-gradient-text text-white">Proceder al Checkout</span>
+              <span className="animated-gradient-text-intense">Proceder al Checkout</span>
             </button>
             
             <div className="mt-4 p-4 bg-green-50 rounded-xl border border-green-100">
