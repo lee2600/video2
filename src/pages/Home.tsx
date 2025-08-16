@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, TrendingUp, Star, Tv, Filter, Calendar, Clock, Flame } from 'lucide-react';
+import { ChevronRight, TrendingUp, Star, Tv, Filter, Calendar, Clock } from 'lucide-react';
 import { tmdbService } from '../services/tmdb';
 import { MovieCard } from '../components/MovieCard';
 import { HeroCarousel } from '../components/HeroCarousel';
@@ -19,7 +19,6 @@ export function Home() {
   const [trendingTimeWindow, setTrendingTimeWindow] = useState<TrendingTimeWindow>('day');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
   const timeWindowLabels = {
     day: 'Hoy',
@@ -29,98 +28,55 @@ export function Home() {
   const fetchTrendingContent = async (timeWindow: TrendingTimeWindow) => {
     try {
       const response = await tmdbService.getTrendingAll(timeWindow, 1);
-      const uniqueContent = tmdbService.removeDuplicates(response.results);
-      setTrendingContent(uniqueContent.slice(0, 12));
-      setLastUpdate(new Date());
+      setTrendingContent(response.results.slice(0, 12));
     } catch (err) {
       console.error('Error fetching trending content:', err);
     }
   };
 
-  const fetchAllContent = async () => {
-    try {
-      setLoading(true);
-      
-      // Get hero content first (no duplicates)
-      const heroContent = await tmdbService.getHeroContent();
-      setHeroItems(heroContent);
-      
-      // Get trending content
-      const trendingResponse = await tmdbService.getTrendingAll(trendingTimeWindow, 1);
-      const uniqueTrending = tmdbService.removeDuplicates(trendingResponse.results);
-      setTrendingContent(uniqueTrending.slice(0, 12));
-      
-      // Get other content, excluding items already in hero and trending
-      const usedIds = new Set([
-        ...heroContent.map(item => item.id),
-        ...uniqueTrending.slice(0, 12).map(item => item.id)
-      ]);
-      
-      const [moviesRes, tvRes, animeRes] = await Promise.all([
-        tmdbService.getPopularMovies(1),
-        tmdbService.getPopularTVShows(1),
-        tmdbService.getPopularAnime(1)
-      ]);
-
-      // Filter out duplicates
-      const filteredMovies = moviesRes.results.filter(movie => !usedIds.has(movie.id)).slice(0, 8);
-      const filteredTVShows = tvRes.results.filter(show => !usedIds.has(show.id)).slice(0, 8);
-      const filteredAnime = animeRes.results.filter(anime => !usedIds.has(anime.id)).slice(0, 8);
-
-      setPopularMovies(filteredMovies);
-      setPopularTVShows(filteredTVShows);
-      setPopularAnime(filteredAnime);
-      setLastUpdate(new Date());
-    } catch (err) {
-      setError('Error al cargar el contenido. Por favor, intenta de nuevo.');
-      console.error('Error fetching home data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchAllContent();
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [moviesRes, tvRes, animeRes, trendingRes] = await Promise.all([
+          tmdbService.getPopularMovies(1),
+          tmdbService.getPopularTVShows(1),
+          tmdbService.getPopularAnime(1),
+          tmdbService.getTrendingAll('day', 1)
+        ]);
+
+        setPopularMovies(moviesRes.results.slice(0, 8));
+        setPopularTVShows(tvRes.results.slice(0, 8));
+        setPopularAnime(animeRes.results.slice(0, 8));
+        setTrendingContent(trendingRes.results.slice(0, 12));
+        
+        // Combinar los mejores elementos para el carrusel
+        const topTrending = trendingRes.results.slice(0, 5);
+        const topMovies = moviesRes.results.slice(0, 2);
+        const topTVShows = tvRes.results.slice(0, 2);
+        setHeroItems([...topTrending, ...topMovies, ...topTVShows]);
+      } catch (err) {
+        setError('Error al cargar el contenido. Por favor, intenta de nuevo.');
+        console.error('Error fetching home data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   useEffect(() => {
     fetchTrendingContent(trendingTimeWindow);
   }, [trendingTimeWindow]);
 
-  // Auto-refresh content daily and weekly
+  // Auto-refresh trending content daily
   useEffect(() => {
-    const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(0, 0, 0, 0);
-    
-    const timeUntilMidnight = tomorrow.getTime() - now.getTime();
-    
-    // Set initial timeout for midnight
-    const midnightTimeout = setTimeout(() => {
-      fetchAllContent();
-      
-      // Then set daily interval
-      const dailyInterval = setInterval(() => {
-        fetchAllContent();
-      }, 24 * 60 * 60 * 1000); // 24 hours
-      
-      return () => clearInterval(dailyInterval);
-    }, timeUntilMidnight);
-
-    // Weekly refresh on Sundays
-    const weeklyInterval = setInterval(() => {
-      const currentDay = new Date().getDay();
-      if (currentDay === 0) { // Sunday
-        fetchAllContent();
-      }
-    }, 24 * 60 * 60 * 1000); // Check daily for Sunday
-
-    return () => {
-      clearTimeout(midnightTimeout);
-      clearInterval(weeklyInterval);
-    };
-  }, []);
+    const interval = setInterval(() => {
+      fetchTrendingContent(trendingTimeWindow);
+    }, 24 * 60 * 60 * 1000); // 24 hours
+    return () => clearInterval(interval);
+  }, [trendingTimeWindow]);
 
   if (loading) {
     return (
@@ -179,14 +135,14 @@ export function Home() {
         <section className="mb-12">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 space-y-4 sm:space-y-0">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Flame className="mr-2 h-6 w-6 text-red-500" />
-              En Tendencia
+              <TrendingUp className="mr-2 h-6 w-6 text-red-500" />
+              Tendencias
             </h2>
             
             {/* Trending Filter */}
             <div className="flex items-center space-x-1 bg-white rounded-lg p-1 shadow-sm border border-gray-200">
               <Filter className="h-4 w-4 text-gray-500 ml-2" />
-              <span className="text-sm font-medium text-gray-700 px-2">Período:</span>
+              <span className="text-sm font-medium text-gray-700 px-2">Tendencias:</span>
               {Object.entries(timeWindowLabels).map(([key, label]) => (
                 <button
                   key={key}
@@ -204,6 +160,14 @@ export function Home() {
             </div>
           </div>
           
+          <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-xl p-4 mb-6 border border-red-100">
+            <p className="text-sm text-red-700 text-center flex items-center justify-center">
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Contenido más popular {trendingTimeWindow === 'day' ? 'de hoy' : 'de esta semana'} según TMDB
+              <span className="ml-2 animate-pulse">🔥</span>
+            </p>
+          </div>
+          
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {trendingContent.map((item) => {
               const itemType = 'title' in item ? 'movie' : 'tv';
@@ -219,7 +183,7 @@ export function Home() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center">
               <Star className="mr-2 h-6 w-6 text-yellow-500" />
-              Películas Destacadas
+              Películas Populares
             </h2>
             <Link
               to="/movies"
@@ -241,7 +205,7 @@ export function Home() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center">
               <Tv className="mr-2 h-6 w-6 text-blue-500" />
-              Series Destacadas
+              Series Populares
             </h2>
             <Link
               to="/tv"
@@ -263,7 +227,7 @@ export function Home() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center">
               <span className="mr-2 text-2xl">🎌</span>
-              Anime Destacado
+              Anime Popular
             </h2>
             <Link
               to="/anime"
@@ -279,11 +243,6 @@ export function Home() {
             ))}
           </div>
         </section>
-
-        {/* Last Update Info (Hidden from users) */}
-        <div className="hidden">
-          <p>Última actualización: {lastUpdate.toLocaleString()}</p>
-        </div>
       </div>
     </div>
   );
