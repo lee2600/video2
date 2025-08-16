@@ -242,7 +242,7 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
                 <MessageCircle className="h-6 w-6" />
               </div>
               <div>
-                <h2 className="text-xl sm:text-2xl font-bold">Finalizar Pedido</h2>
+                <h2 className="text-xl sm:text-2xl animated-gradient-text text-white">Finalizar Pedido</h2>
                 <p className="text-sm opacity-90">Complete sus datos para procesar el pedido</p>
               </div>
             </div>

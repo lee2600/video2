@@ -2,6 +2,132 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Efecto de texto animado con gradiente inspirado en yeroportal */
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  25% {
+    background-position: 100% 50%;
+  }
+  50% {
+    background-position: 100% 100%;
+  }
+  75% {
+    background-position: 0% 100%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes gradient-intense {
+  0% {
+    background-position: 0% 50%;
+    filter: hue-rotate(0deg) saturate(1.2);
+  }
+  20% {
+    background-position: 100% 50%;
+    filter: hue-rotate(72deg) saturate(1.4);
+  }
+  40% {
+    background-position: 100% 100%;
+    filter: hue-rotate(144deg) saturate(1.6);
+  }
+  60% {
+    background-position: 0% 100%;
+    filter: hue-rotate(216deg) saturate(1.4);
+  }
+  80% {
+    background-position: 0% 0%;
+    filter: hue-rotate(288deg) saturate(1.2);
+  }
+  100% {
+    background-position: 0% 50%;
+    filter: hue-rotate(360deg) saturate(1.2);
+  }
+}
+
+.animated-gradient-text {
+  background: linear-gradient(
+    45deg,
+    #ff6b6b,
+    #4ecdc4,
+    #45b7d1,
+    #96ceb4,
+    #feca57,
+    #ff9ff3,
+    #54a0ff,
+    #5f27cd,
+    #00d2d3,
+    #ff9f43,
+    #10ac84,
+    #ee5a24,
+    #0abde3,
+    #3742fa,
+    #2f3542
+  );
+  background-size: 300% 300%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-intense 4s ease-in-out infinite;
+  font-weight: bold;
+  position: relative;
+}
+
+/* Versión especial para texto blanco sobre fondo oscuro */
+.animated-gradient-text.text-white {
+  background: linear-gradient(
+    45deg,
+    #ffffff,
+    #f8f9fa,
+    #e9ecef,
+    #ffffff,
+    #f1f3f4,
+    #ffffff,
+    #e8eaed,
+    #ffffff
+  );
+  background-size: 200% 200%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-shift 3s ease-in-out infinite;
+  font-weight: bold;
+  text-shadow: none;
+  filter: brightness(1.1) contrast(1.1);
+}
+
+.animated-gradient-text-intense {
+  background: linear-gradient(
+    60deg,
+    #ff3838,
+    #ff9500,
+    #ffdd00,
+    #00ff88,
+    #0099ff,
+    #8800ff,
+    #ff0080,
+    #ff4757,
+    #2ed573,
+    #1e90ff,
+    #8e44ad,
+    #e74c3c,
+    #f39c12,
+    #27ae60,
+    #3498db,
+    #9b59b6
+  );
+  background-size: 400% 400%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-intense 3s ease-in-out infinite;
+  font-weight: bold;
+  position: relative;
+}
+
 /* Configuraciones adicionales para deshabilitar zoom */
 @layer base {
   html {
