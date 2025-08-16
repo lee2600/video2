@@ -101,28 +101,6 @@ export interface Video {
   published_at: string;
 }
 
-export interface CastMember {
-  id: number;
-  name: string;
-  character: string;
-  profile_path: string | null;
-  order: number;
-  known_for_department: string;
-}
-
-export interface CrewMember {
-  id: number;
-  name: string;
-  job: string;
-  department: string;
-  profile_path: string | null;
-}
-
-export interface Cast {
-  cast: CastMember[];
-  crew: CrewMember[];
-}
-
 export interface CartItem {
   id: number;
   title: string;
@@ -134,9 +112,6 @@ export interface CartItem {
   selectedSeasons?: number[];
   price?: number;
   totalPrice?: number;
-  paymentType?: 'cash' | 'transfer';
-  original_language?: string;
-  genre_ids?: number[];
 }
 
 export interface APIResponse<T> {

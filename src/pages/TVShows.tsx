@@ -34,13 +34,10 @@ export function TVShows() {
           response = await tmdbService.getPopularTVShows(pageNum);
       }
 
-      // Remove duplicates to ensure fresh content
-      const uniqueResults = tmdbService.removeDuplicates(response.results);
-
       if (append) {
-        setTVShows(prev => tmdbService.removeDuplicates([...prev, ...uniqueResults]));
+        setTVShows(prev => [...prev, ...response.results]);
       } else {
-        setTVShows(uniqueResults);
+        setTVShows(response.results);
       }
       
       setHasMore(pageNum < response.total_pages);
@@ -55,13 +52,6 @@ export function TVShows() {
   useEffect(() => {
     setPage(1);
     fetchTVShows(category, 1, false);
-    
-    // Auto-refresh content daily
-    const dailyRefresh = setInterval(() => {
-      fetchTVShows(category, 1, false);
-    }, 24 * 60 * 60 * 1000); // 24 hours
-    
-    return () => clearInterval(dailyRefresh);
   }, [category]);
 
   const handleCategoryChange = (newCategory: TVCategory) => {

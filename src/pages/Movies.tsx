@@ -38,13 +38,10 @@ export function Movies() {
           response = await tmdbService.getPopularMovies(pageNum);
       }
 
-      // Remove duplicates to ensure fresh content
-      const uniqueResults = tmdbService.removeDuplicates(response.results);
-
       if (append) {
-        setMovies(prev => tmdbService.removeDuplicates([...prev, ...uniqueResults]));
+        setMovies(prev => [...prev, ...response.results]);
       } else {
-        setMovies(uniqueResults);
+        setMovies(response.results);
       }
       
       setHasMore(pageNum < response.total_pages);
@@ -59,13 +56,6 @@ export function Movies() {
   useEffect(() => {
     setPage(1);
     fetchMovies(category, 1, false);
-    
-    // Auto-refresh content daily
-    const dailyRefresh = setInterval(() => {
-      fetchMovies(category, 1, false);
-    }, 24 * 60 * 60 * 1000); // 24 hours
-    
-    return () => clearInterval(dailyRefresh);
   }, [category]);
 
   const handleCategoryChange = (newCategory: MovieCategory) => {
