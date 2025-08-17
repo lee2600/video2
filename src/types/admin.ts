@@ -131,7 +131,7 @@ export const CURRENT_SYSTEM_CONFIG: AdminConfig = {
       "costoTransferencia": 979
     },
     {
-      "titulo": "amor en los tiempos del cólera",
+      "titulo": "tv a la carta",
       "genero": "romance",
       "capitulos": 20,
       "año": 2025,
@@ -181,7 +181,7 @@ export const CURRENT_SYSTEM_CONFIG: AdminConfig = {
       "id": 6,
       "name": "Altamira",
       "fullPath": "Santiago de Cuba > Santiago de Cuba > Altamira",
-      "cost": 350,
+      "cost": 300,
       "active": true
     },
     {
