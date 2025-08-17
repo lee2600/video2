@@ -168,6 +168,11 @@ export function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
     }
   };
 
+  const handleExportSystemFiles = () => {
+    exportSystemFiles();
+    displayLocalNotification('Archivos del sistema exportados con configuración actual aplicada', 'success');
+  };
+
   const filteredNovelas = state.config.novelas.filter(novela =>
     novela.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
     novela.genero.toLowerCase().includes(searchTerm.toLowerCase())
@@ -444,7 +449,7 @@ export function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                           onChange={(e) => {
                             const capitulos = parseInt(e.target.value) || 0;
                             const costoEfectivo = capitulos * 5;
-                            const costoTransferencia = Math.round(costoEfectivo * 1.1);
+                            const costoTransferencia = Math.round(costoEfectivo * (1 + pricingForm.transferFeePercentage / 100));
                             setNovelaForm(prev => ({ 
                               ...prev, 
                               capitulos,
@@ -492,7 +497,7 @@ export function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                           min="0"
                         />
-                        <p className="text-xs text-gray-500 mt-1">Auto-calculado: ${Math.round(((novelaForm.capitulos || 0) * 5) * 1.1)} CUP</p>
+                        <p className="text-xs text-gray-500 mt-1">Auto-calculado: ${Math.round(((novelaForm.capitulos || 0) * 5) * (1 + pricingForm.transferFeePercentage / 100))} CUP</p>
                       </div>
                     </div>
                     
@@ -858,7 +863,7 @@ export function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                         Exportar Archivos del Sistema Completos
                       </h4>
                       <p className="text-indigo-700 mb-4">
-                        <strong>Exportación Avanzada:</strong> Descarga los archivos del código fuente que controlan el sistema (admin.ts, AdminContext.tsx, AdminPanel.tsx, CheckoutModal.tsx, NovelasModal.tsx) con toda la configuración actual aplicada.
+                        <strong>Exportación Avanzada:</strong> Descarga los archivos del código fuente que controlan el sistema con toda la configuración actual aplicada.
                       </p>
                       <div className="bg-indigo-50 rounded-lg p-4 mb-4 border border-indigo-200">
                         <div className="flex items-center mb-2">
@@ -868,15 +873,15 @@ export function AdminPanel({ isOpen, onClose }: AdminPanelProps) {
                           <h5 className="font-semibold text-indigo-900">Archivos que se exportarán:</h5>
                         </div>
                         <ul className="text-sm text-indigo-700 ml-11 space-y-1">
-                          <li>• <code>admin.ts</code> - Tipos y configuración actual</li>
-                          <li>• <code>AdminContext.tsx</code> - Contexto con valores aplicados</li>
-                          <li>• <code>AdminPanel.tsx</code> - Panel con configuración actual</li>
-                          <li>• <code>CheckoutModal.tsx</code> - Sistema de checkout sincronizado</li>
-                          <li>• <code>NovelasModal.tsx</code> - Catálogo sincronizado</li>
+                          <li>• <code>src/types/admin.ts</code> - Tipos y configuración actual</li>
+                          <li>• <code>src/context/AdminContext.tsx</code> - Contexto con valores aplicados</li>
+                          <li>• <code>src/components/AdminPanel.tsx</code> - Panel con configuración actual</li>
+                          <li>• <code>src/components/CheckoutModal.tsx</code> - Sistema de checkout sincronizado</li>
+                          <li>• <code>src/components/NovelasModal.tsx</code> - Catálogo sincronizado</li>
                         </ul>
                       </div>
                       <button
-                        onClick={exportSystemFiles}
+                        onClick={handleExportSystemFiles}
                         className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center"
                       >
                         <FileCode className="h-5 w-5 mr-2" />

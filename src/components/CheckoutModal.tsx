@@ -29,9 +29,8 @@ interface CheckoutModalProps {
   total: number;
 }
 
-
 export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: CheckoutModalProps) {
-  const { state: adminState } = useAdmin();
+  const { state: adminState, getCurrentConfig } = useAdmin();
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     fullName: '',
     phone: '',
@@ -44,8 +43,11 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
   const [generatedOrder, setGeneratedOrder] = useState('');
   const [copied, setCopied] = useState(false);
 
-  // Get delivery zones from admin config
-  const deliveryZones = adminState.config.deliveryZones.filter(zone => zone.active);
+  // Obtener configuración actual del admin
+  const currentConfig = getCurrentConfig();
+  
+  // Get delivery zones from admin config (current applied configuration)
+  const deliveryZones = currentConfig.deliveryZones.filter(zone => zone.active);
   const selectedZone = deliveryZones.find(zone => zone.fullPath === deliveryZone);
   const deliveryCost = selectedZone?.cost || 0;
   const finalTotal = total + deliveryCost;
@@ -75,20 +77,15 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
     const transferItems = items.filter(item => item.paymentType === 'transfer');
     
     const cashTotal = cashItems.reduce((sum, item) => {
-      const adminConfig = JSON.parse(localStorage.getItem('adminConfig') || '{}');
-      const moviePrice = adminConfig.pricing?.moviePrice || 80;
-      const seriesPrice = adminConfig.pricing?.seriesPrice || 300;
-      const basePrice = item.type === 'movie' ? moviePrice : (item.selectedSeasons?.length || 1) * seriesPrice;
+      // Usar configuración actual del admin
+      const basePrice = item.type === 'movie' ? currentConfig.pricing.moviePrice : (item.selectedSeasons?.length || 1) * currentConfig.pricing.seriesPrice;
       return sum + basePrice;
     }, 0);
     
     const transferTotal = transferItems.reduce((sum, item) => {
-      const adminConfig = JSON.parse(localStorage.getItem('adminConfig') || '{}');
-      const moviePrice = adminConfig.pricing?.moviePrice || 80;
-      const seriesPrice = adminConfig.pricing?.seriesPrice || 300;
-      const transferFeePercentage = adminConfig.pricing?.transferFeePercentage || 10;
-      const basePrice = item.type === 'movie' ? moviePrice : (item.selectedSeasons?.length || 1) * seriesPrice;
-      return sum + Math.round(basePrice * (1 + transferFeePercentage / 100));
+      // Usar configuración actual del admin
+      const basePrice = item.type === 'movie' ? currentConfig.pricing.moviePrice : (item.selectedSeasons?.length || 1) * currentConfig.pricing.seriesPrice;
+      return sum + Math.round(basePrice * (1 + currentConfig.pricing.transferFeePercentage / 100));
     }, 0);
     
     return { cashTotal, transferTotal };
@@ -97,13 +94,9 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
   const generateOrderText = () => {
     const orderId = generateOrderId();
     const { cashTotal, transferTotal } = calculateTotals();
-    const adminConfig = JSON.parse(localStorage.getItem('adminConfig') || '{}');
-    const moviePrice = adminConfig.pricing?.moviePrice || 80;
-    const seriesPrice = adminConfig.pricing?.seriesPrice || 300;
-    const transferFeePercentage = adminConfig.pricing?.transferFeePercentage || 10;
     
     const transferFee = transferTotal - items.filter(item => item.paymentType === 'transfer').reduce((sum, item) => {
-      const basePrice = item.type === 'movie' ? moviePrice : (item.selectedSeasons?.length || 1) * seriesPrice;
+      const basePrice = item.type === 'movie' ? currentConfig.pricing.moviePrice : (item.selectedSeasons?.length || 1) * currentConfig.pricing.seriesPrice;
       return sum + basePrice;
     }, 0);
 
@@ -114,9 +107,9 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
           ? `\n  📺 Temporadas: ${item.selectedSeasons.sort((a, b) => a - b).join(', ')}` 
           : '';
         const itemType = item.type === 'movie' ? 'Película' : 'Serie';
-        const basePrice = item.type === 'movie' ? moviePrice : (item.selectedSeasons?.length || 1) * seriesPrice;
-        const finalPrice = item.paymentType === 'transfer' ? Math.round(basePrice * (1 + transferFeePercentage / 100)) : basePrice;
-        const paymentTypeText = item.paymentType === 'transfer' ? 'Transferencia (+10%)' : 'Efectivo';
+        const basePrice = item.type === 'movie' ? currentConfig.pricing.moviePrice : (item.selectedSeasons?.length || 1) * currentConfig.pricing.seriesPrice;
+        const finalPrice = item.paymentType === 'transfer' ? Math.round(basePrice * (1 + currentConfig.pricing.transferFeePercentage / 100)) : basePrice;
+        const paymentTypeText = item.paymentType === 'transfer' ? `Transferencia (+${currentConfig.pricing.transferFeePercentage}%)` : 'Efectivo';
         const emoji = item.type === 'movie' ? '🎬' : '📺';
         return `${emoji} *${item.title}*${seasonInfo}\n  📋 Tipo: ${itemType}\n  💳 Pago: ${paymentTypeText}\n  💰 Precio: $${finalPrice.toLocaleString()} CUP`;
       })
@@ -143,7 +136,7 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
     orderText += `• *Subtotal Contenido: $${total.toLocaleString()} CUP*\n`;
     
     if (transferFee > 0) {
-      orderText += `• Recargo transferencia (${transferFeePercentage}%): +$${transferFee.toLocaleString()} CUP\n`;
+      orderText += `• Recargo transferencia (${currentConfig.pricing.transferFeePercentage}%): +$${transferFee.toLocaleString()} CUP\n`;
     }
     
     orderText += `🚚 Entrega (${selectedZone?.name || 'Zona desconocida'}): +$${deliveryCost.toLocaleString()} CUP\n`;
@@ -193,13 +186,9 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
     try {
       const { orderId } = generateOrderText();
       const { cashTotal, transferTotal } = calculateTotals();
-      const adminConfig = JSON.parse(localStorage.getItem('adminConfig') || '{}');
-      const moviePrice = adminConfig.pricing?.moviePrice || 80;
-      const seriesPrice = adminConfig.pricing?.seriesPrice || 300;
-      const transferFeePercentage = adminConfig.pricing?.transferFeePercentage || 10;
       
       const transferFee = transferTotal - items.filter(item => item.paymentType === 'transfer').reduce((sum, item) => {
-        const basePrice = item.type === 'movie' ? moviePrice : (item.selectedSeasons?.length || 1) * seriesPrice;
+        const basePrice = item.type === 'movie' ? currentConfig.pricing.moviePrice : (item.selectedSeasons?.length || 1) * currentConfig.pricing.seriesPrice;
         return sum + basePrice;
       }, 0);
 
@@ -239,6 +228,7 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
               <div>
                 <h2 className="text-xl sm:text-2xl font-bold">Finalizar Pedido</h2>
                 <p className="text-sm opacity-90">Complete sus datos para procesar el pedido</p>
+                <p className="text-xs opacity-75">Precios: Película ${currentConfig.pricing.moviePrice} CUP | Serie ${currentConfig.pricing.seriesPrice} CUP/temp | Transferencia +{currentConfig.pricing.transferFeePercentage}%</p>
               </div>
             </div>
             <button
@@ -362,7 +352,7 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
                       <h4 className="font-semibold text-green-900">Información de Entrega</h4>
                     </div>
                     <p className="text-sm text-green-700 ml-11">
-                      Seleccione su zona para calcular el costo de entrega. Los precios pueden variar según la distancia.
+                      Seleccione su zona para calcular el costo de entrega. {deliveryZones.length} zonas disponibles.
                     </p>
                   </div>
                   

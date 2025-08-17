@@ -18,14 +18,17 @@ interface NovelasModalProps {
 }
 
 export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
-  const { state: adminState } = useAdmin();
+  const { state: adminState, getCurrentConfig } = useAdmin();
   const [selectedNovelas, setSelectedNovelas] = useState<number[]>([]);
   const [novelasWithPayment, setNovelasWithPayment] = useState<Novela[]>([]);
   const [showContactOptions, setShowContactOptions] = useState(false);
   const [showNovelList, setShowNovelList] = useState(false);
 
-  // Get novelas from admin config
-  const novelas: Novela[] = adminState.config.novelas.map(novela => ({
+  // Obtener configuración actual del admin
+  const currentConfig = getCurrentConfig();
+  
+  // Get novelas from current admin config (applied configuration)
+  const novelas: Novela[] = currentConfig.novelas.map(novela => ({
     id: novela.id,
     titulo: novela.titulo,
     genero: novela.genero,
@@ -73,7 +76,7 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
     setSelectedNovelas([]);
   };
 
-  // Calcular totales por tipo de pago
+  // Calcular totales por tipo de pago usando configuración actual
   const calculateTotals = () => {
     const selectedNovelasData = novelasWithPayment.filter(n => selectedNovelas.includes(n.id));
     
@@ -81,17 +84,17 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
     const transferNovelas = selectedNovelasData.filter(n => n.paymentType === 'transfer');
     
     const cashTotal = cashNovelas.reduce((sum, n) => {
-      const novelaConfig = adminState.config.novelas.find(config => config.id === n.id);
+      const novelaConfig = currentConfig.novelas.find(config => config.id === n.id);
       return sum + (novelaConfig?.costoEfectivo || n.capitulos * 5);
     }, 0);
     
     const transferTotal = transferNovelas.reduce((sum, n) => {
-      const novelaConfig = adminState.config.novelas.find(config => config.id === n.id);
-      return sum + (novelaConfig?.costoTransferencia || Math.round((n.capitulos * 5) * 1.1));
+      const novelaConfig = currentConfig.novelas.find(config => config.id === n.id);
+      return sum + (novelaConfig?.costoTransferencia || Math.round((n.capitulos * 5) * (1 + currentConfig.pricing.transferFeePercentage / 100)));
     }, 0);
     
     const transferBaseTotal = transferNovelas.reduce((sum, n) => {
-      const novelaConfig = adminState.config.novelas.find(config => config.id === n.id);
+      const novelaConfig = currentConfig.novelas.find(config => config.id === n.id);
       return sum + (novelaConfig?.costoEfectivo || n.capitulos * 5);
     }, 0);
     
@@ -114,10 +117,6 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
   const totals = calculateTotals();
 
   const generateNovelListText = () => {
-    // Get admin config for dynamic pricing
-    const adminConfig = JSON.parse(localStorage.getItem('adminConfig') || '{}');
-    const transferFeePercentage = adminConfig.pricing?.transferFeePercentage || 10;
-    
     let listText = "📚 CATÁLOGO DE NOVELAS DISPONIBLES\n";
     listText += "TV a la Carta - Novelas Completas\n\n";
     listText += "💰 Precios variables según novela\n";
@@ -129,7 +128,7 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
     listText += "═══════════════════════════════════\n\n";
     
     novelas.forEach((novela, index) => {
-      const novelaConfig = adminState.config.novelas.find(config => config.id === novela.id);
+      const novelaConfig = currentConfig.novelas.find(config => config.id === novela.id);
       const baseCost = novelaConfig?.costoEfectivo || novela.capitulos * 5;
       listText += `${index + 1}. ${novela.titulo}\n`;
       listText += `   📺 Género: ${novela.genero}\n`;
@@ -138,20 +137,20 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
       listText += `   💰 Costo en efectivo: $${baseCost.toLocaleString()} CUP\n\n`;
     });
     
-    listText += `\n🏦 PRECIOS CON TRANSFERENCIA BANCARIA (+${transferFeePercentage}%):\n`;
+    listText += `\n🏦 PRECIOS CON TRANSFERENCIA BANCARIA (+${currentConfig.pricing.transferFeePercentage}%):\n`;
     listText += "═══════════════════════════════════\n\n";
     
     novelas.forEach((novela, index) => {
-      const novelaConfig = adminState.config.novelas.find(config => config.id === novela.id);
+      const novelaConfig = currentConfig.novelas.find(config => config.id === novela.id);
       const baseCost = novelaConfig?.costoEfectivo || novela.capitulos * 5;
-      const transferCost = novelaConfig?.costoTransferencia || Math.round(baseCost * 1.1);
+      const transferCost = novelaConfig?.costoTransferencia || Math.round(baseCost * (1 + currentConfig.pricing.transferFeePercentage / 100));
       const recargo = transferCost - baseCost;
       listText += `${index + 1}. ${novela.titulo}\n`;
       listText += `   📺 Género: ${novela.genero}\n`;
       listText += `   📊 Capítulos: ${novela.capitulos}\n`;
       listText += `   📅 Año: ${novela.año}\n`;
       listText += `   💰 Costo base: $${baseCost.toLocaleString()} CUP\n`;
-      listText += `   💳 Recargo (${transferFeePercentage}%): +$${recargo.toLocaleString()} CUP\n`;
+      listText += `   💳 Recargo (${currentConfig.pricing.transferFeePercentage}%): +$${recargo.toLocaleString()} CUP\n`;
       listText += `   💰 Costo con transferencia: $${transferCost.toLocaleString()} CUP\n\n`;
     });
     
@@ -160,12 +159,12 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
     
     const totalCapitulos = novelas.reduce((sum, novela) => sum + novela.capitulos, 0);
     const totalEfectivo = novelas.reduce((sum, novela) => {
-      const novelaConfig = adminState.config.novelas.find(config => config.id === novela.id);
+      const novelaConfig = currentConfig.novelas.find(config => config.id === novela.id);
       return sum + (novelaConfig?.costoEfectivo || novela.capitulos * 5);
     }, 0);
     const totalTransferencia = novelas.reduce((sum, novela) => {
-      const novelaConfig = adminState.config.novelas.find(config => config.id === novela.id);
-      return sum + (novelaConfig?.costoTransferencia || Math.round((novela.capitulos * 5) * 1.1));
+      const novelaConfig = currentConfig.novelas.find(config => config.id === novela.id);
+      return sum + (novelaConfig?.costoTransferencia || Math.round((novela.capitulos * 5) * (1 + currentConfig.pricing.transferFeePercentage / 100)));
     }, 0);
     const totalRecargo = totalTransferencia - totalEfectivo;
     
@@ -175,13 +174,13 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
     listText += `   💰 Costo total: $${totalEfectivo.toLocaleString()} CUP\n\n`;
     listText += `🏦 CATÁLOGO COMPLETO CON TRANSFERENCIA:\n`;
     listText += `   💰 Costo base: $${totalEfectivo.toLocaleString()} CUP\n`;
-    listText += `   💳 Recargo total (${transferFeePercentage}%): +$${totalRecargo.toLocaleString()} CUP\n`;
+    listText += `   💳 Recargo total (${currentConfig.pricing.transferFeePercentage}%): +$${totalRecargo.toLocaleString()} CUP\n`;
     listText += `   💰 Costo total con transferencia: $${totalTransferencia.toLocaleString()} CUP\n\n`;
     
     listText += "═══════════════════════════════════\n";
     listText += "💡 INFORMACIÓN IMPORTANTE:\n";
     listText += "• Los precios en efectivo no tienen recargo adicional\n";
-    listText += `• Las transferencias bancarias tienen un ${transferFeePercentage}% de recargo\n`;
+    listText += `• Las transferencias bancarias tienen un ${currentConfig.pricing.transferFeePercentage}% de recargo\n`;
     listText += "• Puedes seleccionar novelas individuales o el catálogo completo\n";
     listText += "• Todos los precios están en pesos cubanos (CUP)\n\n";
     listText += "📞 Para encargar, contacta al +5354690878\n";
@@ -211,8 +210,6 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
     }
 
     const { cashNovelas, transferNovelas, cashTotal, transferBaseTotal, transferFee, transferTotal, grandTotal, totalCapitulos } = totals;
-    const adminConfig = JSON.parse(localStorage.getItem('adminConfig') || '{}');
-    const transferFeePercentage = adminConfig.pricing?.transferFeePercentage || 10;
     
     let message = "Estoy interesado en el catálogo de novelas\nQuiero encargar los títulos o el título:\n\n";
     
@@ -221,7 +218,7 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
       message += "💵 PAGO EN EFECTIVO:\n";
       message += "═══════════════════════════════════\n";
       cashNovelas.forEach((novela, index) => {
-        const novelaConfig = adminState.config.novelas.find(config => config.id === novela.id);
+        const novelaConfig = currentConfig.novelas.find(config => config.id === novela.id);
         const costo = novelaConfig?.costoEfectivo || novela.capitulos * 5;
         message += `${index + 1}. ${novela.titulo}\n`;
         message += `   📺 Género: ${novela.genero}\n`;
@@ -235,23 +232,23 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
     
     // Novelas por transferencia
     if (transferNovelas.length > 0) {
-      message += `🏦 PAGO POR TRANSFERENCIA BANCARIA (+${transferFeePercentage}%):\n`;
+      message += `🏦 PAGO POR TRANSFERENCIA BANCARIA (+${currentConfig.pricing.transferFeePercentage}%):\n`;
       message += "═══════════════════════════════════\n";
       transferNovelas.forEach((novela, index) => {
-        const novelaConfig = adminState.config.novelas.find(config => config.id === novela.id);
+        const novelaConfig = currentConfig.novelas.find(config => config.id === novela.id);
         const baseCost = novelaConfig?.costoEfectivo || novela.capitulos * 5;
-        const totalCost = novelaConfig?.costoTransferencia || Math.round(baseCost * 1.1);
+        const totalCost = novelaConfig?.costoTransferencia || Math.round(baseCost * (1 + currentConfig.pricing.transferFeePercentage / 100));
         const fee = totalCost - baseCost;
         message += `${index + 1}. ${novela.titulo}\n`;
         message += `   📺 Género: ${novela.genero}\n`;
         message += `   📊 Capítulos: ${novela.capitulos}\n`;
         message += `   📅 Año: ${novela.año}\n`;
         message += `   💰 Costo base: $${baseCost.toLocaleString()} CUP\n`;
-        message += `   💳 Recargo (${transferFeePercentage}%): +$${fee.toLocaleString()} CUP\n`;
+        message += `   💳 Recargo (${currentConfig.pricing.transferFeePercentage}%): +$${fee.toLocaleString()} CUP\n`;
         message += `   💰 Costo total: $${totalCost.toLocaleString()} CUP\n\n`;
       });
       message += `💰 Subtotal base transferencia: $${transferBaseTotal.toLocaleString()} CUP\n`;
-      message += `💳 Recargo total (${transferFeePercentage}%): +$${transferFee.toLocaleString()} CUP\n`;
+      message += `💳 Recargo total (${currentConfig.pricing.transferFeePercentage}%): +$${transferFee.toLocaleString()} CUP\n`;
       message += `💰 Subtotal Transferencia: $${transferTotal.toLocaleString()} CUP\n`;
       message += `📊 Total capítulos: ${transferNovelas.reduce((sum, n) => sum + n.capitulos, 0)}\n\n`;
     }
@@ -301,7 +298,9 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
               </div>
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold">Catálogo de Novelas</h2>
-                <p className="text-sm sm:text-base opacity-90">Novelas completas disponibles</p>
+                <p className="text-sm sm:text-base opacity-90">
+                  {novelas.length} novelas disponibles | Transferencia +{currentConfig.pricing.transferFeePercentage}%
+                </p>
               </div>
             </div>
             <button
@@ -331,11 +330,11 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
                 </div>
                 <div className="flex items-center">
                   <span className="text-2xl mr-3">💰</span>
-                  <p className="font-semibold">Precios variables según novela</p>
+                  <p className="font-semibold">Precios variables según novela (configuración actual aplicada)</p>
                 </div>
                 <div className="flex items-center">
                   <span className="text-2xl mr-3">💳</span>
-                  <p className="font-semibold">Transferencia bancaria: +10% de recargo</p>
+                  <p className="font-semibold">Transferencia bancaria: +{currentConfig.pricing.transferFeePercentage}% de recargo</p>
                 </div>
                 <div className="flex items-center">
                   <span className="text-2xl mr-3">📱</span>
@@ -380,7 +379,7 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
                 <Download className="h-6 w-6 mr-3" />
                 <div className="text-left">
                   <div className="text-lg">Descargar Catálogo</div>
-                  <div className="text-sm opacity-90">Lista completa de novelas</div>
+                  <div className="text-sm opacity-90">Lista completa de {novelas.length} novelas</div>
                 </div>
               </button>
               
@@ -455,7 +454,7 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
                       </div>
                       {totals.transferFee > 0 && (
                         <div className="text-sm text-orange-600 mt-2">
-                          Incluye ${totals.transferFee.toLocaleString()} CUP de recargo por transferencia
+                          Incluye ${totals.transferFee.toLocaleString()} CUP de recargo por transferencia ({currentConfig.pricing.transferFeePercentage}%)
                         </div>
                       )}
                     </div>
@@ -466,9 +465,9 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
                   <div className="grid grid-cols-1 gap-3">
                     {novelasWithPayment.map((novela) => {
                       const isSelected = selectedNovelas.includes(novela.id);
-                      const novelaConfig = adminState.config.novelas.find(config => config.id === novela.id);
+                      const novelaConfig = currentConfig.novelas.find(config => config.id === novela.id);
                       const baseCost = novelaConfig?.costoEfectivo || novela.capitulos * 5;
-                      const transferCost = novelaConfig?.costoTransferencia || Math.round(baseCost * 1.1);
+                      const transferCost = novelaConfig?.costoTransferencia || Math.round(baseCost * (1 + currentConfig.pricing.transferFeePercentage / 100));
                       const finalCost = novela.paymentType === 'transfer' ? transferCost : baseCost;
                       
                       return (
@@ -528,7 +527,7 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
                                         }`}
                                       >
                                         <CreditCard className="h-3 w-3 inline mr-1" />
-                                        Transferencia (+10%)
+                                        Transferencia (+{currentConfig.pricing.transferFeePercentage}%)
                                       </button>
                                     </div>
                                   </div>
