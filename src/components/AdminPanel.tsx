@@ -1,0 +1,1 @@
+// AdminPanel.tsx con configuración actual aplicada\n// Este archivo contiene el panel de control con todos los cambios realizados

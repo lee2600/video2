@@ -2,182 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Efecto de texto animado exacto como yeroportal.vercel.app */
-@keyframes yeroportal-gradient {
-  0% {
-    background-position: 0% 50%;
-    filter: hue-rotate(0deg) brightness(1.1) saturate(1.3);
-  }
-  12.5% {
-    background-position: 25% 25%;
-    filter: hue-rotate(45deg) brightness(1.2) saturate(1.4);
-  }
-  25% {
-    background-position: 100% 50%;
-    filter: hue-rotate(90deg) brightness(1.1) saturate(1.5);
-  }
-  37.5% {
-    background-position: 75% 75%;
-    filter: hue-rotate(135deg) brightness(1.3) saturate(1.4);
-  }
-  50% {
-    background-position: 100% 100%;
-    filter: hue-rotate(180deg) brightness(1.2) saturate(1.6);
-  }
-  62.5% {
-    background-position: 25% 75%;
-    filter: hue-rotate(225deg) brightness(1.1) saturate(1.4);
-  }
-  75% {
-    background-position: 0% 50%;
-    filter: hue-rotate(270deg) brightness(1.3) saturate(1.5);
-  }
-  87.5% {
-    background-position: 75% 25%;
-    filter: hue-rotate(315deg) brightness(1.2) saturate(1.3);
-  }
-  100% {
-    background-position: 0% 50%;
-    filter: hue-rotate(360deg) brightness(1.1) saturate(1.3);
-  }
-}
-
-@keyframes yeroportal-intense {
-  0% {
-    background-position: 0% 50%;
-    filter: hue-rotate(0deg) brightness(1.2) saturate(1.5) contrast(1.1);
-    transform: scale(1);
-  }
-  10% {
-    background-position: 20% 30%;
-    filter: hue-rotate(36deg) brightness(1.3) saturate(1.6) contrast(1.2);
-    transform: scale(1.01);
-  }
-  25% {
-    background-position: 100% 50%;
-    filter: hue-rotate(90deg) brightness(1.1) saturate(1.7) contrast(1.1);
-    transform: scale(1);
-  }
-  35% {
-    background-position: 80% 80%;
-    filter: hue-rotate(126deg) brightness(1.4) saturate(1.5) contrast(1.3);
-    transform: scale(1.01);
-  }
-  50% {
-    background-position: 100% 100%;
-    filter: hue-rotate(180deg) brightness(1.2) saturate(1.8) contrast(1.2);
-    transform: scale(1);
-  }
-  60% {
-    background-position: 30% 70%;
-    filter: hue-rotate(216deg) brightness(1.3) saturate(1.6) contrast(1.1);
-    transform: scale(1.01);
-  }
-  75% {
-    background-position: 0% 50%;
-    filter: hue-rotate(270deg) brightness(1.4) saturate(1.7) contrast(1.3);
-    transform: scale(1);
-  }
-  85% {
-    background-position: 60% 20%;
-    filter: hue-rotate(306deg) brightness(1.2) saturate(1.5) contrast(1.2);
-    transform: scale(1.01);
-  }
-  100% {
-    background-position: 0% 50%;
-    filter: hue-rotate(360deg) brightness(1.2) saturate(1.5) contrast(1.1);
-    transform: scale(1);
-  }
-}
-
-.animated-gradient-text {
-  background: linear-gradient(
-    90deg,
-    #ff0080,
-    #ff8c00,
-    #ffd700,
-    #32cd32,
-    #00bfff,
-    #8a2be2,
-    #ff1493,
-    #ff4500,
-    #00ff7f,
-    #1e90ff,
-    #9932cc,
-    #ff69b4,
-    #ff6347,
-    #00ced1,
-    #9370db,
-    #ff0080
-  );
-  background-size: 400% 400%;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: yeroportal-gradient 4s ease-in-out infinite;
-  font-weight: bold;
-  position: relative;
-  text-shadow: none;
-  letter-spacing: 0.02em;
-}
-
-.animated-gradient-text-intense {
-  background: linear-gradient(
-    120deg,
-    #ff0040,
-    #ff8000,
-    #ffff00,
-    #80ff00,
-    #00ff80,
-    #0080ff,
-    #8000ff,
-    #ff0080,
-    #ff4000,
-    #ffff40,
-    #40ff40,
-    #40ffff,
-    #4040ff,
-    #ff40ff,
-    #ff8040,
-    #ff0040
-  );
-  background-size: 500% 500%;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: yeroportal-intense 3.5s ease-in-out infinite;
-  font-weight: bold;
-  text-shadow: none;
-  letter-spacing: 0.03em;
-  position: relative;
-}
-
-/* Versión especial para texto blanco sobre fondo oscuro */
-.animated-gradient-text.text-white {
-  background: linear-gradient(
-    90deg,
-    #ffffff,
-    #f0f8ff,
-    #e6f3ff,
-    #ffffff,
-    #f5f5f5,
-    #ffffff,
-    #e8f4fd,
-    #ffffff,
-    #f9f9f9,
-    #ffffff
-  );
-  background-size: 300% 300%;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: yeroportal-gradient 4s ease-in-out infinite;
-  font-weight: bold;
-  text-shadow: none;
-  filter: brightness(1.1) contrast(1.05);
-  letter-spacing: 0.02em;
-}
-
 /* Configuraciones adicionales para deshabilitar zoom */
 @layer base {
   html {
@@ -249,5 +73,15 @@
   
   .animate-shrink {
     animation: shrink 3s linear forwards;
+  }
+  
+  /* Animaciones para el modal */
+  @keyframes fade-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  
+  .animate-in {
+    animation: fade-in 0.3s ease-out;
   }
 }
