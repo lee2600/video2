@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Shield, Eye, EyeOff, Settings, DollarSign, MapPin, BookOpen, Bell, Download, Upload, FolderSync as Sync, BarChart3, Users, Package, TrendingUp, AlertCircle, CheckCircle, Clock, Trash2, Plus, Edit, Save, X, Home, ArrowLeft, LogOut, Lock, User } from 'lucide-react';
+import { Shield, Eye, EyeOff, Settings, DollarSign, MapPin, BookOpen, Bell, Download, Upload, FolderSync as Sync, BarChart3, Users, Package, TrendingUp, AlertCircle, CheckCircle, Clock, Trash2, Plus, Edit, Save, X, Home, ArrowLeft, LogOut, Lock, User, Image, Globe, Tv, Star, Calendar } from 'lucide-react';
 import { useAdmin } from '../context/AdminContext';
+import { novelImageStorage } from '../services/novelImageStorage';
+import { novelTrendingService } from '../services/novelTrendingService';
 import type { PriceConfig, DeliveryZone, Novel } from '../context/AdminContext';
 
 export function AdminPanel() {
@@ -36,6 +39,17 @@ export function AdminPanel() {
   const [priceForm, setPriceForm] = useState<PriceConfig>(state.prices);
   const [deliveryForm, setDeliveryForm] = useState({ name: '', cost: 0 });
   const [novelForm, setNovelForm] = useState({ titulo: '', genero: '', capitulos: 0, año: new Date().getFullYear(), descripcion: '' });
+  const [novelForm, setNovelForm] = useState({ 
+    titulo: '', 
+    genero: '', 
+    capitulos: 0, 
+    año: new Date().getFullYear(), 
+    pais: '', 
+    estado: 'finalizada' as 'transmision' | 'finalizada',
+    descripcion: '' 
+  });
+  const [novelImageFile, setNovelImageFile] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [editingDeliveryZone, setEditingDeliveryZone] = useState<DeliveryZone | null>(null);
   const [editingNovel, setEditingNovel] = useState<Novel | null>(null);
 
@@ -100,18 +114,95 @@ export function AdminPanel() {
   // Handle novel operations
   const handleAddNovel = (e: React.FormEvent) => {
     e.preventDefault();
-    if (novelForm.titulo.trim() && novelForm.genero.trim() && novelForm.capitulos > 0) {
-      addNovel(novelForm);
-      setNovelForm({ titulo: '', genero: '', capitulos: 0, año: new Date().getFullYear(), descripcion: '' });
+    if (novelForm.titulo.trim() && novelForm.genero.trim() && novelForm.capitulos > 0 && novelForm.pais.trim()) {
+      handleNovelSubmit();
     }
   };
 
   const handleUpdateNovel = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingNovel) {
-      updateNovel(editingNovel);
-      setEditingNovel(null);
+      handleNovelUpdate();
     }
+  };
+
+  const handleNovelSubmit = async () => {
+    try {
+      setUploadingImage(true);
+      
+      let imageUrl: string | undefined;
+      
+      // Subir imagen si se seleccionó una
+      if (novelImageFile) {
+        imageUrl = await novelImageStorage.storeNovelImage(Date.now(), novelImageFile);
+      }
+      
+      const novelData = {
+        ...novelForm,
+        imagenUrl: imageUrl
+      };
+      
+      addNovel(novelData);
+      setNovelForm({ 
+        titulo: '', 
+        genero: '', 
+        capitulos: 0, 
+        año: new Date().getFullYear(), 
+        pais: '', 
+        estado: 'finalizada',
+        descripcion: '' 
+      });
+      setNovelImageFile(null);
+    } catch (error) {
+      console.error('Error adding novel:', error);
+      alert('Error al agregar la novela: ' + (error as Error).message);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleNovelUpdate = async () => {
+    if (!editingNovel) return;
+    
+    try {
+      setUploadingImage(true);
+      
+      let imageUrl = editingNovel.imagenUrl;
+      
+      // Subir nueva imagen si se seleccionó una
+      if (novelImageFile) {
+        imageUrl = await novelImageStorage.storeNovelImage(editingNovel.id, novelImageFile);
+      }
+      
+      const updatedNovel = {
+        ...editingNovel,
+        imagenUrl: imageUrl
+      };
+      
+      updateNovel(updatedNovel);
+      setEditingNovel(null);
+      setNovelImageFile(null);
+    } catch (error) {
+      console.error('Error updating novel:', error);
+      alert('Error al actualizar la novela: ' + (error as Error).message);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNovelImageFile(file);
+    }
+  };
+
+  const addNovelToTrending = (novel: Novel, type: 'day' | 'week') => {
+    novelTrendingService.addToTrending(novel, type);
+  };
+
+  const removeNovelFromTrending = (novelId: number, type?: 'day' | 'week') => {
+    novelTrendingService.removeFromTrending(novelId, type);
   };
 
   // Handle sync operations
