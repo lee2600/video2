@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, TrendingUp, Star, Tv, Filter, Calendar, Clock, Flame, BookOpen } from 'lucide-react';
+import { ChevronRight, TrendingUp, Star, Monitor, Filter, Calendar, Clock, Flame, Library, Play, Clapperboard, Sparkles } from 'lucide-react';
 import { tmdbService } from '../services/tmdb';
 import { MovieCard } from '../components/MovieCard';
 import { HeroCarousel } from '../components/HeroCarousel';
@@ -58,15 +58,27 @@ export function Home() {
         ...uniqueTrending.slice(0, 12).map(item => item.id)
       ]);
       
-      const [moviesRes, tvRes, animeRes] = await Promise.all([
+      // Get comprehensive content including current releases
+      const [moviesRes, tvRes, animeRes, nowPlayingRes, airingTodayRes] = await Promise.all([
         tmdbService.getPopularMovies(1),
         tmdbService.getPopularTVShows(1),
-        tmdbService.getPopularAnime(1)
+        tmdbService.getAnimeFromMultipleSources(1),
+        tmdbService.getNowPlayingMovies(1),
+        tmdbService.getAiringTodayTVShows(1)
       ]);
 
-      // Filter out duplicates
-      const filteredMovies = moviesRes.results.filter(movie => !usedIds.has(movie.id)).slice(0, 8);
-      const filteredTVShows = tvRes.results.filter(show => !usedIds.has(show.id)).slice(0, 8);
+      // Combine and filter out duplicates, prioritizing current content
+      const allMovies = [
+        ...nowPlayingRes.results,
+        ...moviesRes.results.filter(movie => !nowPlayingRes.results.some(np => np.id === movie.id))
+      ];
+      const allTVShows = [
+        ...airingTodayRes.results,
+        ...tvRes.results.filter(show => !airingTodayRes.results.some(at => at.id === show.id))
+      ];
+      
+      const filteredMovies = allMovies.filter(movie => !usedIds.has(movie.id)).slice(0, 8);
+      const filteredTVShows = allTVShows.filter(show => !usedIds.has(show.id)).slice(0, 8);
       const filteredAnime = animeRes.results.filter(anime => !usedIds.has(anime.id)).slice(0, 8);
 
       setPopularMovies(filteredMovies);
@@ -155,28 +167,28 @@ export function Home() {
             </span>
           </h1>
           <p className="text-lg md:text-xl mb-8 max-w-3xl mx-auto opacity-90">
-            Explora miles de películas, series y anime. Encuentra tus favoritos y agrégalos a tu carrito.
+            Explora miles de películas, animes, series ilimitadas y mucho más. Encuentra tus favoritos y agrégalos a tu carrito.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/movies"
               className="bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-full font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center"
             >
-              <TrendingUp className="mr-2 h-5 w-5" />
+              <Clapperboard className="mr-2 h-5 w-5" />
               Explorar Películas
             </Link>
             <Link
               to="/tv"
               className="bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-full font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center"
             >
-              <Tv className="mr-2 h-5 w-5" />
+              <Monitor className="mr-2 h-5 w-5" />
               Ver Series
             </Link>
             <button
               onClick={() => setShowNovelasModal(true)}
               className="bg-pink-600 hover:bg-pink-700 px-8 py-3 rounded-full font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center"
             >
-              <BookOpen className="mr-2 h-5 w-5" />
+              <Library className="mr-2 h-5 w-5" />
               Catálogo de Novelas
             </button>
           </div>
@@ -227,7 +239,7 @@ export function Home() {
         <section className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Star className="mr-2 h-6 w-6 text-yellow-500" />
+              <Clapperboard className="mr-2 h-6 w-6 text-blue-500" />
               Películas Destacadas
             </h2>
             <Link
@@ -249,7 +261,7 @@ export function Home() {
         <section className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Tv className="mr-2 h-6 w-6 text-blue-500" />
+              <Monitor className="mr-2 h-6 w-6 text-purple-500" />
               Series Destacadas
             </h2>
             <Link
@@ -271,7 +283,7 @@ export function Home() {
         <section>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-              <span className="mr-2 text-2xl">🎌</span>
+              <Sparkles className="mr-2 h-6 w-6 text-pink-500" />
               Anime Destacado
             </h2>
             <Link
