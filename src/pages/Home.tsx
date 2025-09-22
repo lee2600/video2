@@ -225,7 +225,8 @@ export function Home() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {/* Movies and TV Shows */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
             {trendingContent.map((item) => {
               const itemType = 'title' in item ? 'movie' : 'tv';
               return (
@@ -233,6 +234,25 @@ export function Home() {
               );
             })}
           </div>
+          
+          {/* Trending Novels */}
+          {(trendingTimeWindow === 'day' ? trendingNovelsDay : trendingNovelsWeek).length > 0 && (
+            <div className="mt-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+                <BookOpen className="mr-2 h-5 w-5 text-purple-600" />
+                Novelas en Tendencia - {timeWindowLabels[trendingTimeWindow]}
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {(trendingTimeWindow === 'day' ? trendingNovelsDay : trendingNovelsWeek).map((novel) => (
+                  <NovelCard 
+                    key={`trending-novel-${novel.id}`} 
+                    novel={novel}
+                    onClick={() => setShowNovelasModal(true)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Popular Movies */}

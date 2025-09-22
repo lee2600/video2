@@ -556,12 +556,12 @@ export function NovelasModal({ isOpen, onClose, onFinalizePedido }: NovelasModal
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0">
                     <div className="text-sm text-purple-700 bg-white/60 px-4 py-2 rounded-xl">
                       <strong>Mostrando {filteredNovelas.length} de {allNovelas.length} novelas</strong>
-                      {(searchTerm || selectedGenre || selectedYear) && (
+                      {(searchTerm || selectedGenre || selectedYear || selectedCountry || selectedStatus) && (
                         <span className="block sm:inline sm:ml-2 text-purple-600">• Filtros activos</span>
                       )}
                     </div>
                     
-                    {(searchTerm || selectedGenre || selectedYear || sortBy !== 'titulo' || sortOrder !== 'asc') && (
+                    {(searchTerm || selectedGenre || selectedYear || selectedCountry || selectedStatus || sortBy !== 'titulo' || sortOrder !== 'asc') && (
                       <button
                         onClick={clearFilters}
                         className="text-xs sm:text-sm bg-purple-200 hover:bg-purple-300 text-purple-800 px-3 sm:px-4 py-2 rounded-xl transition-colors font-medium w-full sm:w-auto text-center"
@@ -666,6 +666,13 @@ export function NovelasModal({ isOpen, onClose, onFinalizePedido }: NovelasModal
                                 <div className="flex-1">
                                   <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3">{novela.titulo}</h3>
                                   <div className="flex flex-wrap gap-2 sm:gap-3 text-xs sm:text-sm text-gray-600 mb-4">
+                                    <span className={`px-2 sm:px-3 py-1 sm:py-2 rounded-full font-medium ${
+                                      novela.estado === 'transmision' 
+                                        ? 'bg-red-100 text-red-700' 
+                                        : 'bg-green-100 text-green-700'
+                                    }`}>
+                                      {novela.estado === 'transmision' ? '📺 En Transmisión' : '✅ Finalizada'}
+                                    </span>
                                     <span className="bg-purple-100 text-purple-700 px-2 sm:px-3 py-1 sm:py-2 rounded-full font-medium">
                                       📺 {novela.genero}
                                     </span>
@@ -674,6 +681,9 @@ export function NovelasModal({ isOpen, onClose, onFinalizePedido }: NovelasModal
                                     </span>
                                     <span className="bg-green-100 text-green-700 px-2 sm:px-3 py-1 sm:py-2 rounded-full font-medium">
                                       📅 {novela.año}
+                                    </span>
+                                    <span className="bg-orange-100 text-orange-700 px-2 sm:px-3 py-1 sm:py-2 rounded-full font-medium">
+                                      🌍 {novela.pais}
                                     </span>
                                   </div>
                                   

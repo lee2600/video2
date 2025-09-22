@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import JSZip from 'jszip';
+import { novelTrendingService } from '../services/novelTrendingService';
+import { novelImageStorage } from '../services/novelImageStorage';
 
 // CONFIGURACIÓN EMBEBIDA - Generada automáticamente
 const EMBEDDED_CONFIG = {

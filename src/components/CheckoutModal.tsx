@@ -427,16 +427,16 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
 
               {/* Location Map Option */}
               {pickupLocation && (
-                <div className="mt-6 p-4 sm:p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border-2 border-blue-200 shadow-lg">
+                <div className="mt-4 sm:mt-6 p-3 sm:p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border-2 border-blue-200 shadow-lg">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-3 sm:space-y-0">
                     <div>
-                      <h4 className="font-bold text-blue-900 text-base sm:text-lg flex items-center">
+                      <h4 className="font-bold text-blue-900 text-sm sm:text-lg flex items-center">
                         <div className="bg-blue-500 p-2 rounded-lg mr-3 shadow-sm">
                           <MapPin className="h-4 w-4 text-white" />
                         </div>
                         📍 Ubicación del Local
                       </h4>
-                      <p className="text-sm text-blue-700 ml-11">Ver ubicación exacta en Google Maps (opcional)</p>
+                      <p className="text-xs sm:text-sm text-blue-700 ml-11">Ver ubicación exacta en Google Maps (opcional)</p>
                     </div>
                     <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-3">
                       <label className="flex items-center justify-center sm:justify-start w-full sm:w-auto">
@@ -444,14 +444,14 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
                           type="checkbox"
                           checked={showLocationMap}
                           onChange={(e) => setShowLocationMap(e.target.checked)}
-                          className="mr-2 h-5 w-5 text-blue-600 focus:ring-blue-500 focus:ring-2 flex-shrink-0"
+                          className="mr-2 h-4 w-4 sm:h-5 sm:w-5 text-blue-600 focus:ring-blue-500 focus:ring-2 flex-shrink-0"
                         />
-                        <span className="text-sm font-medium text-blue-700">📍 Incluir ubicación</span>
+                        <span className="text-xs sm:text-sm font-medium text-blue-700">📍 Incluir ubicación</span>
                       </label>
                       <button
                         type="button"
                         onClick={openLocationMap}
-                        className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white px-4 py-3 rounded-xl text-sm font-bold transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center justify-center w-full sm:w-auto"
+                        className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white px-3 sm:px-4 py-2 sm:py-3 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center justify-center w-full sm:w-auto"
                       >
                         <ExternalLink className="h-4 w-4 mr-2" />
                         🗺️ Ver Mapa
@@ -462,14 +462,14 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
               )}
 
               {deliveryZones.length === 0 && (
-                <div className="text-center py-12 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl border-2 border-yellow-200">
+                <div className="text-center py-8 sm:py-12 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl border-2 border-yellow-200">
                   <div className="bg-yellow-100 p-4 rounded-full w-fit mx-auto mb-6">
-                    <Truck className="h-12 w-12 text-yellow-600" />
+                    <Truck className="h-8 w-8 sm:h-12 sm:w-12 text-yellow-600" />
                   </div>
-                  <h3 className="text-xl font-bold text-yellow-800 mb-3">
+                  <h3 className="text-lg sm:text-xl font-bold text-yellow-800 mb-3">
                     Solo disponible recogida en el local
                   </h3>
-                  <p className="text-yellow-700 max-w-md mx-auto">
+                  <p className="text-sm sm:text-base text-yellow-700 max-w-md mx-auto px-4">
                     Contacta con el administrador para configurar zonas de entrega adicionales.
                   </p>
                 </div>
