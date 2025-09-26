@@ -69,7 +69,7 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
         : '';
       
       const novelInfo = item.type === 'novel' 
-        ? `\n  📚 Capítulos: ${item.chapters}\n  📖 Género: ${item.genre}` 
+        ? `\n  📚 Capítulos: ${item.chapters}\n  📖 Género: ${item.genre}\n  🌍 País: ${item.country || 'No especificado'}\n  📡 Estado: ${item.status === 'transmision' ? 'En Transmisión' : 'Finalizada'}` 
         : '';
       
       const itemType = item.type === 'movie' ? 'Película' : item.type === 'tv' ? 'Serie' : 'Novela';

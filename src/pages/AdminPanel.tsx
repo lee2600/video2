@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, Eye, EyeOff, Settings, DollarSign, MapPin, BookOpen, Bell, Download, Upload, FolderSync as Sync, BarChart3, Users, Package, TrendingUp, AlertCircle, CheckCircle, Clock, Trash2, Plus, Edit, Save, X, Home, ArrowLeft, LogOut, Lock, User, Image, Globe, Tv, Star, Calendar } from 'lucide-react';
+import { Shield, Eye, EyeOff, Settings, DollarSign, MapPin, BookOpen, Bell, Download, Upload, FolderSync as Sync, BarChart3, Users, Package, TrendingUp, AlertCircle, CheckCircle, Clock, Trash2, Plus, Edit, Save, X, Home, ArrowLeft, LogOut, Lock, User } from 'lucide-react';
 import { useAdmin } from '../context/AdminContext';
-import { novelImageStorage } from '../services/novelImageStorage';
-import { novelTrendingService } from '../services/novelTrendingService';
 import type { PriceConfig, DeliveryZone, Novel } from '../context/AdminContext';
 
 export function AdminPanel() {
@@ -42,14 +40,14 @@ export function AdminPanel() {
     genero: '', 
     capitulos: 0, 
     año: new Date().getFullYear(), 
-    pais: '', 
-    estado: 'finalizada' as 'transmision' | 'finalizada',
-    descripcion: '' 
+    descripcion: '',
+    pais: '',
+    imagen: '',
+    estado: 'finalizada' as 'transmision' | 'finalizada'
   });
-  const [novelImageFile, setNovelImageFile] = useState<File | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
   const [editingDeliveryZone, setEditingDeliveryZone] = useState<DeliveryZone | null>(null);
   const [editingNovel, setEditingNovel] = useState<Novel | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // UI states
   const [isSyncing, setIsSyncing] = useState(false);
@@ -113,94 +111,26 @@ export function AdminPanel() {
   const handleAddNovel = (e: React.FormEvent) => {
     e.preventDefault();
     if (novelForm.titulo.trim() && novelForm.genero.trim() && novelForm.capitulos > 0 && novelForm.pais.trim()) {
-      handleNovelSubmit();
+      addNovel(novelForm);
+      setNovelForm({ 
+        titulo: '', 
+        genero: '', 
+        capitulos: 0, 
+        año: new Date().getFullYear(), 
+        descripcion: '',
+        pais: '',
+        imagen: '',
+        estado: 'finalizada'
+      });
     }
   };
 
   const handleUpdateNovel = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingNovel) {
-      handleNovelUpdate();
-    }
-  };
-
-  const handleNovelSubmit = async () => {
-    try {
-      setUploadingImage(true);
-      
-      let imageUrl: string | undefined;
-      
-      // Subir imagen si se seleccionó una
-      if (novelImageFile) {
-        imageUrl = await novelImageStorage.storeNovelImage(Date.now(), novelImageFile);
-      }
-      
-      const novelData = {
-        ...novelForm,
-        imagenUrl: imageUrl
-      };
-      
-      addNovel(novelData);
-      setNovelForm({ 
-        titulo: '', 
-        genero: '', 
-        capitulos: 0, 
-        año: new Date().getFullYear(), 
-        pais: '', 
-        estado: 'finalizada',
-        descripcion: '' 
-      });
-      setNovelImageFile(null);
-    } catch (error) {
-      console.error('Error adding novel:', error);
-      alert('Error al agregar la novela: ' + (error as Error).message);
-    } finally {
-      setUploadingImage(false);
-    }
-  };
-
-  const handleNovelUpdate = async () => {
-    if (!editingNovel) return;
-    
-    try {
-      setUploadingImage(true);
-      
-      let imageUrl = editingNovel.imagenUrl;
-      
-      // Subir nueva imagen si se seleccionó una
-      if (novelImageFile) {
-        imageUrl = await novelImageStorage.storeNovelImage(editingNovel.id, novelImageFile);
-      }
-      
-      const updatedNovel = {
-        ...editingNovel,
-        imagenUrl: imageUrl
-      };
-      
-      updateNovel(updatedNovel);
+      updateNovel(editingNovel);
       setEditingNovel(null);
-      setNovelImageFile(null);
-    } catch (error) {
-      console.error('Error updating novel:', error);
-      alert('Error al actualizar la novela: ' + (error as Error).message);
-    } finally {
-      setUploadingImage(false);
     }
-  };
-
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setNovelImageFile(file);
-    }
-  };
-
-  const addNovelToTrending = (novel: Novel, type: 'day' | 'week') => {
-    novelTrendingService.addToTrending(novel, type);
-  };
-
-  const removeNovelFromTrending = (novelId: number, type?: 'day' | 'week') => {
-    novelTrendingService.removeFromTrending(novelId, type);
   };
 
   // Handle sync operations
@@ -241,6 +171,38 @@ export function AdminPanel() {
     }
   };
 
+  // Handle image upload for novels
+  const handleImageUpload = async (file: File, novelId?: number) => {
+    setUploadingImage(true);
+    try {
+      // Convert image to base64 and store locally
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const imageData = e.target?.result as string;
+        
+        if (editingNovel && novelId) {
+          // Update existing novel
+          setEditingNovel({ ...editingNovel, imagen: imageData });
+        } else {
+          // New novel
+          setNovelForm({ ...novelForm, imagen: imageData });
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const removeNovelImage = (novelId?: number) => {
+    if (editingNovel && novelId) {
+      setEditingNovel({ ...editingNovel, imagen: undefined });
+    } else {
+      setNovelForm({ ...novelForm, imagen: '' });
+    }
+  };
   // Login screen
   if (!state.isAuthenticated) {
     return (
@@ -727,7 +689,7 @@ export function AdminPanel() {
                   
                   {/* Add new novel form */}
                   <form onSubmit={editingNovel ? handleUpdateNovel : handleAddNovel} className="mb-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Título
@@ -768,10 +730,10 @@ export function AdminPanel() {
                       
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          País de Origen
+                          País
                         </label>
                         <select
-                          value={editingNovel ? editingNovel.pais : novelForm.pais}
+                          value={editingNovel ? editingNovel.pais || '' : novelForm.pais}
                           onChange={(e) => {
                             if (editingNovel) {
                               setEditingNovel({ ...editingNovel, pais: e.target.value });
@@ -784,15 +746,21 @@ export function AdminPanel() {
                         >
                           <option value="">Seleccionar país</option>
                           <option value="Turquía">🇹🇷 Turquía</option>
+                          <option value="México">🇲🇽 México</option>
                           <option value="Brasil">🇧🇷 Brasil</option>
                           <option value="Colombia">🇨🇴 Colombia</option>
-                          <option value="México">🇲🇽 México</option>
                           <option value="Argentina">🇦🇷 Argentina</option>
                           <option value="España">🇪🇸 España</option>
-                          <option value="India">🇮🇳 India</option>
-                          <option value="Corea del Sur">🇰🇷 Corea del Sur</option>
                           <option value="Estados Unidos">🇺🇸 Estados Unidos</option>
+                          <option value="Corea del Sur">🇰🇷 Corea del Sur</option>
+                          <option value="India">🇮🇳 India</option>
                           <option value="Reino Unido">🇬🇧 Reino Unido</option>
+                          <option value="Francia">🇫🇷 Francia</option>
+                          <option value="Italia">🇮🇹 Italia</option>
+                          <option value="Alemania">🇩🇪 Alemania</option>
+                          <option value="Japón">🇯🇵 Japón</option>
+                          <option value="China">🇨🇳 China</option>
+                          <option value="Rusia">🇷🇺 Rusia</option>
                         </select>
                       </div>
                       
@@ -801,7 +769,7 @@ export function AdminPanel() {
                           Estado
                         </label>
                         <select
-                          value={editingNovel ? editingNovel.estado : novelForm.estado}
+                          value={editingNovel ? editingNovel.estado || 'finalizada' : novelForm.estado}
                           onChange={(e) => {
                             const estado = e.target.value as 'transmision' | 'finalizada';
                             if (editingNovel) {
@@ -811,15 +779,12 @@ export function AdminPanel() {
                             }
                           }}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          required
                         >
                           <option value="finalizada">✅ Finalizada</option>
-                          <option value="transmision">📺 En Transmisión</option>
+                          <option value="transmision">📡 En Transmisión</option>
                         </select>
                       </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Capítulos
@@ -864,30 +829,6 @@ export function AdminPanel() {
                       </div>
                     </div>
                     
-                    {/* Image upload section */}
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Imagen de la Novela (Opcional)
-                      </label>
-                      <div className="flex items-center space-x-4">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageFileChange}
-                          className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
-                        />
-                        {novelImageFile && (
-                          <div className="flex items-center text-green-600 text-sm">
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            {novelImageFile.name}
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Formatos soportados: JPG, PNG, WebP. Tamaño máximo: 5MB
-                      </p>
-                    </div>
-                    
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Descripción (Opcional)
@@ -907,39 +848,78 @@ export function AdminPanel() {
                       />
                     </div>
                     
+                    {/* Image Upload Section */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Imagen de la Novela (Opcional)
+                      </label>
+                      
+                      {(editingNovel?.imagen || novelForm.imagen) && (
+                        <div className="mb-4 relative inline-block">
+                          <img
+                            src={editingNovel?.imagen || novelForm.imagen}
+                            alt="Preview"
+                            className="w-32 h-40 object-cover rounded-lg border-2 border-gray-300 shadow-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeNovelImage(editingNovel?.id)}
+                            className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full shadow-lg transition-colors"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center space-x-4">
+                        <label className="cursor-pointer bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 flex items-center">
+                          <Upload className="h-4 w-4 mr-2" />
+                          {uploadingImage ? 'Subiendo...' : 'Subir Imagen'}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleImageUpload(file, editingNovel?.id);
+                              }
+                            }}
+                            className="hidden"
+                            disabled={uploadingImage}
+                          />
+                        </label>
+                        
+                        {(editingNovel?.imagen || novelForm.imagen) && (
+                          <button
+                            type="button"
+                            onClick={() => removeNovelImage(editingNovel?.id)}
+                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Quitar Imagen
+                          </button>
+                        )}
+                      </div>
+                      
+                      <p className="text-xs text-gray-500 mt-2">
+                        La imagen se almacenará localmente en el dispositivo. Formatos soportados: JPG, PNG, WebP
+                      </p>
+                    </div>
+                    
                     <div className="flex space-x-3">
                       <button
                         type="submit"
-                        disabled={uploadingImage}
                         className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center"
                       >
                         {editingNovel ? (
                           <>
-                            {uploadingImage ? (
-                              <>
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                                Actualizando...
-                              </>
-                            ) : (
-                              <>
-                                <Save className="h-5 w-5 mr-2" />
-                                Actualizar Novela
-                              </>
-                            )}
+                            <Save className="h-5 w-5 mr-2" />
+                            Actualizar Novela
                           </>
                         ) : (
                           <>
-                            {uploadingImage ? (
-                              <>
-                                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                                Agregando...
-                              </>
-                            ) : (
-                              <>
-                                <Plus className="h-5 w-5 mr-2" />
-                                Agregar Novela
-                              </>
-                            )}
+                            <Plus className="h-5 w-5 mr-2" />
+                            Agregar Novela
                           </>
                         )}
                       </button>
@@ -947,10 +927,7 @@ export function AdminPanel() {
                       {editingNovel && (
                         <button
                           type="button"
-                          onClick={() => {
-                            setEditingNovel(null);
-                            setNovelImageFile(null);
-                          }}
+                          onClick={() => setEditingNovel(null)}
                           className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center"
                         >
                           <X className="h-5 w-5 mr-2" />
@@ -961,85 +938,52 @@ export function AdminPanel() {
                   </form>
                   
                   {/* Novels list */}
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
                     {state.novels.map((novel) => (
-                      <div key={novel.id} className="flex items-start justify-between p-4 bg-gray-50 rounded-lg">
-                        <div className="flex-1">
-                          <div className="flex items-start space-x-3">
-                            {/* Novel image */}
-                            <div className="flex-shrink-0">
-                              {novel.imagenUrl ? (
-                                <img
-                                  src={novelImageStorage.getNovelImage(novel.id) || 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=100&h=150&fit=crop&crop=center'}
-                                  alt={novel.titulo}
-                                  className="w-16 h-24 object-cover rounded-lg border border-gray-200"
-                                />
-                              ) : (
-                                <div className="w-16 h-24 bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg border border-gray-200 flex items-center justify-center">
-                                  <BookOpen className="h-6 w-6 text-purple-500" />
-                                </div>
-                              )}
+                      <div key={novel.id} className="flex flex-col sm:flex-row sm:items-start justify-between p-4 bg-gray-50 rounded-lg space-y-4 sm:space-y-0">
+                        <div className="flex flex-col sm:flex-row sm:items-start space-y-4 sm:space-y-0 sm:space-x-4 flex-1">
+                          {/* Novel Image */}
+                          {novel.imagen && (
+                            <div className="flex-shrink-0 mx-auto sm:mx-0">
+                              <img
+                                src={novel.imagen}
+                                alt={novel.titulo}
+                                className="w-20 h-24 object-cover rounded-lg border-2 border-gray-300 shadow-sm"
+                              />
                             </div>
-                            
-                            <div className="flex-1">
-                              <h3 className="font-medium text-gray-900 mb-1">{novel.titulo}</h3>
-                              <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600 mb-2">
-                                <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">
-                                  {novel.genero}
-                                </span>
-                                <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
-                                  {novel.capitulos} cap.
-                                </span>
-                                <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
-                                  {novel.año}
-                                </span>
-                                <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
-                                  🌍 {novel.pais}
-                                </span>
-                                <span className={`px-2 py-1 rounded-full font-medium ${
-                                  novel.estado === 'transmision' 
-                                    ? 'bg-red-100 text-red-700' 
-                                    : 'bg-gray-100 text-gray-700'
-                                }`}>
-                                  {novel.estado === 'transmision' ? '📺 En Transmisión' : '✅ Finalizada'}
-                                </span>
-                              </div>
-                              <div className="text-sm text-gray-600">
-                                <span className="font-medium">${(novel.capitulos * state.prices.novelPricePerChapter).toLocaleString()} CUP</span>
-                              </div>
-                              {novel.descripcion && (
-                                <p className="text-sm text-gray-500 mt-1 line-clamp-2">{novel.descripcion}</p>
-                              )}
-                            </div>
+                          )}
+                          
+                          <div className="flex-1 text-center sm:text-left">
+                          <h3 className="font-medium text-gray-900">{novel.titulo}</h3>
+                          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-sm text-gray-600 mt-2">
+                            <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-medium">{novel.genero}</span>
+                            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">{novel.capitulos} cap.</span>
+                            <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">{novel.año}</span>
+                            {novel.pais && (
+                              <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full text-xs font-medium">
+                                {novel.pais}
+                              </span>
+                            )}
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              novel.estado === 'transmision' 
+                                ? 'bg-red-100 text-red-700' 
+                                : 'bg-green-100 text-green-700'
+                            }`}>
+                              {novel.estado === 'transmision' ? '📡 En Transmisión' : '✅ Finalizada'}
+                            </span>
+                            <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-medium">
+                              ${(novel.capitulos * state.prices.novelPricePerChapter).toLocaleString()} CUP
+                            </span>
                           </div>
+                          {novel.descripcion && (
+                            <p className="text-sm text-gray-500 mt-2 line-clamp-2">{novel.descripcion}</p>
+                          )}
+                        </div>
                         </div>
                         
-                        <div className="flex flex-col space-y-2 ml-4">
-                          {/* Trending controls */}
-                          <div className="flex space-x-1">
-                            <button
-                              onClick={() => addNovelToTrending(novel, 'day')}
-                              className="text-red-600 hover:text-red-800 p-1 rounded text-xs bg-red-50 hover:bg-red-100 transition-colors"
-                              title="Agregar a tendencias de hoy"
-                            >
-                              🔥 Hoy
-                            </button>
-                            <button
-                              onClick={() => addNovelToTrending(novel, 'week')}
-                              className="text-blue-600 hover:text-blue-800 p-1 rounded text-xs bg-blue-50 hover:bg-blue-100 transition-colors"
-                              title="Agregar a tendencias de la semana"
-                            >
-                              📈 Semana
-                            </button>
-                          </div>
-                          
-                          {/* Edit/Delete controls */}
-                          <div className="flex space-x-2">
+                        <div className="flex space-x-2 justify-center sm:justify-end sm:ml-4">
                           <button
-                            onClick={() => {
-                              setEditingNovel(novel);
-                              setNovelImageFile(null);
-                            }}
+                            onClick={() => setEditingNovel(novel)}
                             className="text-purple-600 hover:text-purple-800 p-2 rounded-lg hover:bg-purple-50 transition-colors"
                           >
                             <Edit className="h-4 w-4" />
@@ -1050,7 +994,6 @@ export function AdminPanel() {
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
-                        </div>
                         </div>
                       </div>
                     ))}
