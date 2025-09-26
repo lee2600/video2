@@ -236,34 +236,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       selectedSeasons: item.type === 'tv' && 'selectedSeasons' in item && !item.selectedSeasons ? [1] : 'selectedSeasons' in item ? item.selectedSeasons : undefined
     };
     dispatch({ type: 'ADD_ITEM', payload: itemWithDefaults });
-    
-    setToast({
-      message: `"${item.title}" agregado al carrito`,
-      type: 'success',
-      isVisible: true
-    });
   };
 
   const addNovel = (novel: NovelCartItem) => {
     dispatch({ type: 'ADD_ITEM', payload: novel });
-    
-    setToast({
-      message: `"${novel.title}" agregada al carrito`,
-      type: 'success',
-      isVisible: true
-    });
   };
   const removeItem = (id: number) => {
     const item = state.items.find(item => item.id === id);
     dispatch({ type: 'REMOVE_ITEM', payload: id });
-    
-    if (item) {
-      setToast({
-        message: `"${item.title}" retirado del carrito`,
-        type: 'error',
-        isVisible: true
-      });
-    }
   };
 
   const updateSeasons = (id: number, seasons: number[]) => {
